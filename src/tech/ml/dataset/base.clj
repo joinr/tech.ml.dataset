@@ -11,7 +11,8 @@
             [tech.io :as io]
             [tech.parallel.require :as parallel-req]
             [tech.parallel.for :as parallel-for]
-            [tech.parallel.utils :as par-util])
+            [tech.parallel.utils :as par-util]
+            [clojure.set])
   (:import [java.io InputStream]
            [tech.v2.datatype ObjectReader]
            [java.util List]
@@ -599,3 +600,28 @@ the correct type."
                          (map #(ds-col/select % rhs-indexes)))]
        (from-prototype lhs "join-table" (concat lhs-cols rhs-cols)))
      :rhs-missing-indexes rhs-missing}))
+
+
+(defn left-join
+  "Like tech.ml.dataset.base/join-by-column, except we include the
+   entries from lhs that did not make the join in the final
+   result, filling them with column-appropriate missing values."
+  [colname lhs rhs]
+  (let [inner    (-> (join-by-column colname lhs rhs) :join-table)
+        unused   (clojure.set/difference
+                    (set (lhs colname))
+                    (set (inner colname)))
+        leftover (->> (lhs colname)
+                      (map-indexed (fn [idx v]
+                                     (when (unused v) idx)))
+                      (filter identity)
+                      (select lhs (column-names lhs)))
+        n         (ds-row-count leftover)
+        new-columns (->> (clojure.set/difference
+                          (set (column-names inner))
+                          (set (column-names lhs)))
+                         (map (fn [name]
+                                (ds-col/empty-column name
+                                   (dtype/get-datatype
+                                        (column inner name)) n ))))]
+    (ds-concat inner (reduce add-column leftover new-columns))))

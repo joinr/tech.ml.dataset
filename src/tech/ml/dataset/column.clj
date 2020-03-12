@@ -210,6 +210,13 @@ Implementations should check their metadata before doing calculations."
           scanned-missing :missing} (ensure-column-reader data)]
      (col-impl/new-column name coldata metadata (or missing scanned-missing)))))
 
+(defn empty-column
+  "Like tech.ml.dataset.column/new-column, except we populate
+   the column with empty values corresponding to the underlying
+   datatype specified by dtype."
+  [name dtype n]
+  ;;TODO change the missing set to a flyweight set or something...
+  (new-column name (col-impl/make-container dtype n) nil (set (range n))))
 
 (defn ensure-column
   "Convert an item to a column if at all possible.  Currently columns either implement

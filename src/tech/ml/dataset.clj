@@ -64,7 +64,8 @@
                         ->>dataset
                         from-prototype
                         dataset->string
-                        join-by-column)
+                        join-by-column
+                        left-join)
 
 
 (par-util/export-symbols tech.ml.dataset.impl.dataset

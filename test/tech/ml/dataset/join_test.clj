@@ -20,6 +20,59 @@
     (is (empty? (seq rhs-missing)))))
 
 
+;;sample from https://www.w3schools.com/sql/sql_join_left.asp
+(deftest left-join-test
+  (let [lhs (ds/->dataset [{"CustomerID" 1,
+                            "CustomerName" "Alfreds Futterkiste",
+                            "ContactName" "Maria Anders",
+                            "Address" "Obere Str. 57",
+                            "City" "Berlin",
+                            "PostalCode" 12209,
+                            "Country" "Germany"}
+                           {"CustomerID" 2,
+                            "CustomerName" "Ana Trujillo Emparedados y helados",
+                            "ContactName" "Ana Trujillo",
+                            "Address" "Avda. de la Constitución 2222",
+                            "City" "México D.F.",
+                            "PostalCode" 5021,
+                            "Country" "Mexico"}
+                           {"CustomerID" 3,
+                            "CustomerName" "Antonio Moreno Taquería",
+                            "ContactName" "Antonio Moreno",
+                            "Address" "Mataderos 2312",
+                            "City" "México D.F.",
+                            "PostalCode" 5023,
+                            "Country" "Mexico"}])
+
+        rhs (ds/->dataset [{"OrderID" 10308,
+                            "CustomerID" 2,
+                            "EmployeeID" 7,
+                            "OrderDate" "1996-09-18",
+                            "ShipperID" 3}
+                           {"OrderID" 10309,
+                            "CustomerID" 37,
+                            "EmployeeID" 3,
+                            "OrderDate" "1996-09-19",
+                            "ShipperID" 1}
+                           {"OrderID" 10310,
+                            "CustomerID" 77,
+                            "EmployeeID" 8,
+                            "OrderDate" "1996-09-20",
+                            "ShipperID" 2}])
+        joined (ds/left-join "CustomerID" lhs rhs)
+        recs   (ds/mapseq-reader joined)
+        empty-int?    #{-32768}
+        empty-string? #{""}
+        empty-val?    #(or (empty-int? %) (empty-string? %))
+        realized       (some #(when (= (get % "CustomerID") 2) %) recs)
+        unrealized     (filter #(not= % realized) recs)]
+    (is (every? (complement empty-val?) (vals realized))
+        "Ana's record should be fully realized.")
+    (is (every? identity
+                (for [{:strs [OrderID OrderDate ShipperID]}
+                      unrealized]
+                  (every? empty-val? [OrderID OrderDate ShipperID])))
+        "Everyone else should have missing entries from RHS.")))
 
 
 (comment

@@ -37,7 +37,8 @@
      :string (make-string-table n-elems "")
      :text (let [list-data (ArrayList.)]
              (dotimes [iter n-elems]
-               (.add list-data "")))
+               (.add list-data ""))
+             list-data)
      (dtype/make-container :list dtype n-elems)))
   ([dtype]
    (make-container dtype 0)))
@@ -85,6 +86,7 @@
         (if (contains? missing idx)
           missing-val
           (.read rdr idx))))))
+
 
 
 (deftype Column
